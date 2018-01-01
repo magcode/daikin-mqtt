@@ -1,8 +1,8 @@
 # daikin-mqtt
-MQTT interface for Daikin AC
-Based on (Daikin Java interface)[https://bitbucket.org/m-do/jdaikin] of Jonathan Giles.
+MQTT interface for Daikin AC devices.
+Based on [Daikin Java interface](https://bitbucket.org/m-do/jdaikin) of Jonathan Giles.
 
-*WIP*
+*This software is WIP*
 
 # Properties file
 You need a properties file:

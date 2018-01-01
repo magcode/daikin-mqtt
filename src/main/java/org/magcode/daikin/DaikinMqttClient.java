@@ -17,7 +17,8 @@ import java.util.concurrent.TimeUnit;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.magcode.daikin.mqtt.Callback;
+import org.magcode.daikin.mqtt.MqttSubscriber;
+import org.magcode.daikin.mqtt.MqttDevicePublisher;
 import org.magcode.daikin.mqtt.MqttNodePublisher;
 
 import net.jonathangiles.daikin.DaikinFactory;
@@ -30,6 +31,7 @@ public class DaikinMqttClient {
 	private static String rootTopic;
 	private static MqttClient mqttClient;
 	public static final String nodeName = "aircon";
+	private static final int deviceRefresh = 10;
 
 	public static void main(String[] args) throws Exception {
 
@@ -50,10 +52,15 @@ public class DaikinMqttClient {
 			value.setDaikin(daikin);
 		}
 
-		// start mqtt device publisher
+		// start mqtt node publisher
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		Runnable devicePublisher = new MqttNodePublisher(daikins, rootTopic, mqttClient);
-		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 2, refresh,
+		Runnable nodePublisher = new MqttNodePublisher(daikins, rootTopic, mqttClient);
+		ScheduledFuture<?> nodePublisherFuture = executor.scheduleAtFixedRate(nodePublisher, 2, refresh,
+				TimeUnit.SECONDS);
+
+		// start mqtt device publisher
+		Runnable devicePublisher = new MqttDevicePublisher(daikins, rootTopic, mqttClient);
+		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 0, deviceRefresh,
 				TimeUnit.SECONDS);
 
 		Runtime.getRuntime().addShutdownHook(new Thread() {
@@ -68,7 +75,7 @@ public class DaikinMqttClient {
 					mqttClient.disconnect();
 					System.out.println("Disconnected from MQTT server");
 
-					devicePublisherFuture.cancel(true);
+					nodePublisherFuture.cancel(true);
 					devicePublisherFuture.cancel(true);
 
 				} catch (MqttException e) {
@@ -125,7 +132,7 @@ public class DaikinMqttClient {
 	private static void startMQTTClient() throws MqttException {
 		System.out.println("Starting MQTT Client ...");
 		mqttClient = new MqttClient(mqttServer, "client-for-daikin");
-		mqttClient.setCallback(new Callback(daikins, rootTopic));
+		mqttClient.setCallback(new MqttSubscriber(daikins, rootTopic));
 		mqttClient.connect();
 		for (Entry<String, DaikinConfig> entry : daikins.entrySet()) {
 			DaikinConfig value = entry.getValue();

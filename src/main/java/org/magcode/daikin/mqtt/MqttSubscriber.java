@@ -47,6 +47,13 @@ public class MqttSubscriber implements MqttCallback {
 			case Constants.PR_MODE:
 				targetDaikin.getDaikin().setMode(Mode.Heat);
 				break;
+			case Constants.PR_POWER:
+				String messageString = message.toString();
+				if (StringUtils.isNotBlank(messageString)) {
+					Boolean turnOn = Boolean.parseBoolean(message.toString());
+					targetDaikin.getDaikin().setOn(turnOn);
+				}
+				break;
 			}
 		}
 	}

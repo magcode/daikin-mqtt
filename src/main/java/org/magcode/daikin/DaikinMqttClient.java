@@ -4,6 +4,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.Enumeration;
 import java.util.HashMap;
 import java.util.Map;
@@ -14,7 +16,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
+import org.apache.logging.log4j.core.LifeCycle;
 import org.eclipse.paho.client.mqttv3.MqttClient;
+import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.magcode.daikin.mqtt.MqttSubscriber;
@@ -31,7 +37,8 @@ public class DaikinMqttClient {
 	private static String rootTopic;
 	private static MqttClient mqttClient;
 	public static final String nodeName = "aircon";
-	private static final int deviceRefresh = 10;
+	private static final int deviceRefresh = 600;
+	private static Logger logger = LogManager.getLogger(DaikinMqttClient.class);
 
 	public static void main(String[] args) throws Exception {
 
@@ -55,31 +62,34 @@ public class DaikinMqttClient {
 		// start mqtt node publisher
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
 		Runnable nodePublisher = new MqttNodePublisher(daikins, rootTopic, mqttClient);
-		ScheduledFuture<?> nodePublisherFuture = executor.scheduleAtFixedRate(nodePublisher, 2, refresh,
+		ScheduledFuture<?> nodePublisherFuture = executor.scheduleAtFixedRate(nodePublisher, 10, refresh,
 				TimeUnit.SECONDS);
 
 		// start mqtt device publisher
 		Runnable devicePublisher = new MqttDevicePublisher(daikins, rootTopic, mqttClient);
-		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 0, deviceRefresh,
+		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 2, deviceRefresh,
 				TimeUnit.SECONDS);
-
+		
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
+				Logger logger2 = LogManager.getLogger("shutdown");
 				try {
+					
 					MqttMessage message = new MqttMessage();
 					message.setPayload("disconnected".getBytes());
 					message.setRetained(true);
 					mqttClient.publish(rootTopic + "/$state", message);
 
 					mqttClient.disconnect();
-					System.out.println("Disconnected from MQTT server");
+					logger2.info("Disconnected from MQTT server");
 
 					nodePublisherFuture.cancel(true);
 					devicePublisherFuture.cancel(true);
+					((LifeCycle) LogManager.getContext()).stop();
 
 				} catch (MqttException e) {
-					System.out.println(e);
+					logger2.error("Error during shutdown", e);
 				}
 			}
 		});
@@ -123,23 +133,32 @@ public class DaikinMqttClient {
 				try {
 					input.close();
 				} catch (IOException e) {
-					e.printStackTrace();
+					logger.error("Failed to close file", e);
 				}
 			}
 		}
 	}
 
 	private static void startMQTTClient() throws MqttException {
-		System.out.println("Starting MQTT Client ...");
-		mqttClient = new MqttClient(mqttServer, "client-for-daikin");
+		String hostName = "";
+		try {
+			hostName = InetAddress.getLocalHost().getHostName();
+		} catch (UnknownHostException e) {
+			logger.error("Failed to get hostname", e);
+		}
+		mqttClient = new MqttClient(mqttServer, "client-for-daikin-on-" + hostName);
+		MqttConnectOptions connOpt = new MqttConnectOptions();
+		connOpt.setCleanSession(false);
+		connOpt.setKeepAliveInterval(30);
+		connOpt.setAutomaticReconnect(true);
 		mqttClient.setCallback(new MqttSubscriber(daikins, rootTopic));
 		mqttClient.connect();
+		logger.info("Connected to MQTT broker.");
 		for (Entry<String, DaikinConfig> entry : daikins.entrySet()) {
 			DaikinConfig value = entry.getValue();
 			String subTopic = rootTopic + "/" + value.getName() + "/aircon/+/set";
 			mqttClient.subscribe(subTopic);
-			System.out.println("Subcribed to " + subTopic);
+			logger.info("Subscribed to {}", subTopic);
 		}
-		System.out.println("Connected to MQTT broker.");
 	}
 }

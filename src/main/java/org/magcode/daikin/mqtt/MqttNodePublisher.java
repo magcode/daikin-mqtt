@@ -7,6 +7,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
+import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
 import org.magcode.daikin.DaikinMqttClient;
 
@@ -42,7 +43,7 @@ public class MqttNodePublisher implements Runnable {
 				String nodePropTopic = topic + "/" + value.getName() + "/" + DaikinMqttClient.nodeName + "/";
 
 				message.setPayload(Boolean.toString(daikinDevice.isOn()).getBytes());
-				this.mqttClient.publish(nodePropTopic + "on", message);
+				this.mqttClient.publish(nodePropTopic + Constants.PR_POWER, message);
 				
 				message.setPayload(daikinDevice.getMode().toString().getBytes());
 				this.mqttClient.publish(nodePropTopic + "mode", message);
@@ -52,6 +53,9 @@ public class MqttNodePublisher implements Runnable {
 
 				message.setPayload(Float.toString(daikinDevice.getInsideTemperature()).getBytes());
 				this.mqttClient.publish(nodePropTopic + "intemp", message);
+
+				message.setPayload(Float.toString(daikinDevice.getOutsideTemperature()).getBytes());
+				this.mqttClient.publish(nodePropTopic + "otemp", message);
 				
 				message.setPayload(Boolean.toString(daikinDevice.isReachable()).getBytes());
 				this.mqttClient.publish(nodePropTopic + "reachable", message);

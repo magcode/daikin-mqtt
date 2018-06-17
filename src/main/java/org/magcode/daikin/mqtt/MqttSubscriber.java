@@ -51,7 +51,10 @@ public class MqttSubscriber implements MqttCallback {
 				String messageString = message.toString();
 				if (StringUtils.isNotBlank(messageString)) {
 					Boolean turnOn = Boolean.parseBoolean(message.toString());
-					targetDaikin.getDaikin().setOn(turnOn);
+					if (targetDaikin!=null && targetDaikin.getDaikin()!=null)
+					{
+						targetDaikin.getDaikin().setOn(turnOn);
+					}
 				}
 				break;
 			}

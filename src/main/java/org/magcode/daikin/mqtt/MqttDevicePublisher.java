@@ -21,11 +21,14 @@ public class MqttDevicePublisher implements Runnable {
 	private MqttClient mqttClient;
 	private String topic;
 	private Map<String, DaikinConfig> daikinHosts;
+	private int deviceRefresh;
 
-	public MqttDevicePublisher(Map<String, DaikinConfig> daikinHosts, String topic, MqttClient mqttClient) {
+	public MqttDevicePublisher(Map<String, DaikinConfig> daikinHosts, String topic, MqttClient mqttClient,
+			int devicerefresh) {
 		this.daikinHosts = daikinHosts;
 		this.topic = topic;
 		this.mqttClient = mqttClient;
+		this.deviceRefresh = devicerefresh;
 	}
 
 	@Override
@@ -65,13 +68,40 @@ public class MqttDevicePublisher implements Runnable {
 
 				this.mqttClient.publish(deviceTopic + "/$state", message);
 
-				// Homie
-				message.setPayload("2.1.0".getBytes());
+				// Homie version
+				message.setPayload("3.0.0".getBytes());
 				this.mqttClient.publish(deviceTopic + "/$homie", message);
+
+				// name
+				String name = "Aircondition - " + value.getName();
+				message.setPayload(name.getBytes());
+				this.mqttClient.publish(deviceTopic + "/$name", message);
+
+				// firmware
+				message.setPayload("daikin-mqtt".getBytes());
+				this.mqttClient.publish(deviceTopic + "/$fw/name", message);
+				message.setPayload("0.0.3".getBytes());
+				this.mqttClient.publish(deviceTopic + "/$fw/version", message);
 
 				// nodes
 				message.setPayload(DaikinMqttClient.nodeName.getBytes());
 				this.mqttClient.publish(deviceTopic + "/$nodes", message);
+
+				// implementation
+				message.setPayload("daikin-mqtt".getBytes());
+				this.mqttClient.publish(deviceTopic + "/$implementation", message);
+
+				// stats
+				message.setPayload(("" + deviceRefresh).getBytes());
+				this.mqttClient.publish(deviceTopic + "/$stats/interval", message);
+
+				// node details
+
+				message.setPayload("Aircondition".getBytes());
+				this.mqttClient.publish(nodePropTopic + "$name", message);
+				this.mqttClient.publish(nodePropTopic + "$type", message);
+				message.setPayload(String.join(",", Constants.PROPERTIES).getBytes());
+				this.mqttClient.publish(nodePropTopic + "$properties", message);
 				// setable properties
 				message.setPayload("true".getBytes());
 				this.mqttClient.publish(nodePropTopic + Constants.PR_TARGETTEMP + Constants.PR_SETTABLE, message);

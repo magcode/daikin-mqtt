@@ -1,5 +1,7 @@
 package org.magcode.daikin.mqtt;
 
+import java.lang.management.ManagementFactory;
+import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 import java.util.Map.Entry;
 
@@ -27,6 +29,8 @@ public class MqttNodePublisher implements Runnable {
 
 	@Override
 	public void run() {
+
+		// nodes
 		for (Entry<String, DaikinConfig> entry : this.daikinHosts.entrySet()) {
 			DaikinConfig value = entry.getValue();
 			IDaikin daikinDevice = value.getDaikin();
@@ -42,31 +46,36 @@ public class MqttNodePublisher implements Runnable {
 
 				String nodePropTopic = topic + "/" + value.getName() + "/" + DaikinMqttClient.nodeName + "/";
 
+				// stats
+				RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
+				long uptime = rb.getUptime();
+				message.setPayload(("" + uptime).getBytes());
+				this.mqttClient.publish(topic + value.getName() + "/$stats/uptime", message);
+
 				message.setPayload(Boolean.toString(daikinDevice.isOn()).getBytes());
 				this.mqttClient.publish(nodePropTopic + Constants.PR_POWER, message);
-				
+
 				message.setPayload(daikinDevice.getMode().toString().getBytes());
-				this.mqttClient.publish(nodePropTopic + "mode", message);
+				this.mqttClient.publish(nodePropTopic + Constants.PR_MODE, message);
 
 				message.setPayload(Float.toString(daikinDevice.getTargetTemperature()).getBytes());
-				this.mqttClient.publish(nodePropTopic + "targettemp", message);
+				this.mqttClient.publish(nodePropTopic + Constants.PR_TARGETTEMP, message);
 
 				message.setPayload(Float.toString(daikinDevice.getInsideTemperature()).getBytes());
-				this.mqttClient.publish(nodePropTopic + "intemp", message);
+				this.mqttClient.publish(nodePropTopic + Constants.PR_INTEMP, message);
 
 				message.setPayload(Float.toString(daikinDevice.getOutsideTemperature()).getBytes());
-				this.mqttClient.publish(nodePropTopic + "otemp", message);
-				
+				this.mqttClient.publish(nodePropTopic + Constants.PR_OUTTEMP, message);
+
 				message.setPayload(Boolean.toString(daikinDevice.isReachable()).getBytes());
 				this.mqttClient.publish(nodePropTopic + "reachable", message);
 
 				message.setPayload(daikinDevice.getFan().toString().getBytes());
-				this.mqttClient.publish(nodePropTopic + "fan", message);
-				
+				this.mqttClient.publish(nodePropTopic + Constants.PR_FAN, message);
+
 				message.setPayload(daikinDevice.getFanDirection().toString().getBytes());
-				this.mqttClient.publish(nodePropTopic + "fandirection", message);				
-				
-				
+				this.mqttClient.publish(nodePropTopic + Constants.PR_FANDIR, message);
+
 			} catch (MqttPersistenceException e) {
 				// TODO Auto-generated catch block
 				e.printStackTrace();

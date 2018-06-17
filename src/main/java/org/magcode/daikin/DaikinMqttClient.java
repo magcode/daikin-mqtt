@@ -66,8 +66,8 @@ public class DaikinMqttClient {
 				TimeUnit.SECONDS);
 
 		// start mqtt device publisher
-		Runnable devicePublisher = new MqttDevicePublisher(daikins, rootTopic, mqttClient);
-		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 2, deviceRefresh,
+		Runnable devicePublisher = new MqttDevicePublisher(daikins, rootTopic, mqttClient, deviceRefresh);
+		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 15, deviceRefresh,
 				TimeUnit.SECONDS);
 		
 		Runtime.getRuntime().addShutdownHook(new Thread() {

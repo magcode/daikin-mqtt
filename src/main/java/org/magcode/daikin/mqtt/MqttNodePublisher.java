@@ -5,10 +5,11 @@ import java.lang.management.RuntimeMXBean;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
 import org.magcode.daikin.DaikinMqttClient;
@@ -20,6 +21,7 @@ public class MqttNodePublisher implements Runnable {
 	private MqttClient mqttClient;
 	private String topic;
 	private Map<String, DaikinConfig> daikinHosts;
+	private static Logger logger = LogManager.getLogger(MqttNodePublisher.class);
 
 	public MqttNodePublisher(Map<String, DaikinConfig> daikinHosts, String topic, MqttClient mqttClient) {
 		this.daikinHosts = daikinHosts;
@@ -37,21 +39,21 @@ public class MqttNodePublisher implements Runnable {
 			try {
 				daikinDevice.readDaikinState();
 			} catch (DaikinUnreachableException e1) {
-				// TODO Auto-generated catch block
+				logger.info("Daikin {} is unreachable", value.getName());
 			}
 			try {
 
 				MqttMessage message = new MqttMessage();
 				message.setRetained(true);
 
+				// stats/uptime
+				RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
+				long uptime = rb.getUptime() / 1000;
+				message.setPayload(("" + uptime).getBytes());
+				this.mqttClient.publish(topic + "/" + value.getName() + "/$stats/uptime", message);
 				String nodePropTopic = topic + "/" + value.getName() + "/" + DaikinMqttClient.nodeName + "/";
 
-				// stats
-				RuntimeMXBean rb = ManagementFactory.getRuntimeMXBean();
-				long uptime = rb.getUptime();
-				message.setPayload(("" + uptime).getBytes());
-				this.mqttClient.publish(topic + value.getName() + "/$stats/uptime", message);
-
+				// current AC data
 				message.setPayload(Boolean.toString(daikinDevice.isOn()).getBytes());
 				this.mqttClient.publish(nodePropTopic + Constants.PR_POWER, message);
 
@@ -76,15 +78,9 @@ public class MqttNodePublisher implements Runnable {
 				message.setPayload(daikinDevice.getFanDirection().toString().getBytes());
 				this.mqttClient.publish(nodePropTopic + Constants.PR_FANDIR, message);
 
-			} catch (MqttPersistenceException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			} catch (MqttException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("MQTT error", e);
 			}
-
 		}
-
 	}
 }

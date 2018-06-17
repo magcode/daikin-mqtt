@@ -6,10 +6,11 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.lang3.StringUtils;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
 import org.magcode.daikin.DaikinMqttClient;
@@ -22,6 +23,7 @@ public class MqttDevicePublisher implements Runnable {
 	private String topic;
 	private Map<String, DaikinConfig> daikinHosts;
 	private int deviceRefresh;
+	private static Logger logger = LogManager.getLogger(MqttDevicePublisher.class);
 
 	public MqttDevicePublisher(Map<String, DaikinConfig> daikinHosts, String topic, MqttClient mqttClient,
 			int devicerefresh) {
@@ -39,7 +41,7 @@ public class MqttDevicePublisher implements Runnable {
 			try {
 				daikinDevice.readDaikinState();
 			} catch (DaikinUnreachableException e1) {
-				// we don't care
+				logger.info("Daikin {} is unreachable", value.getName());
 			}
 			try {
 				String deviceTopic = topic + "/" + value.getName();
@@ -109,12 +111,8 @@ public class MqttDevicePublisher implements Runnable {
 				this.mqttClient.publish(nodePropTopic + Constants.PR_FANDIR + Constants.PR_SETTABLE, message);
 				this.mqttClient.publish(nodePropTopic + Constants.PR_MODE + Constants.PR_SETTABLE, message);
 
-			} catch (MqttPersistenceException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
 			} catch (MqttException e) {
-				// TODO Auto-generated catch block
-				e.printStackTrace();
+				logger.error("MQTT error", e);
 			}
 		}
 	}

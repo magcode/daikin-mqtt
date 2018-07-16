@@ -15,6 +15,7 @@ import org.magcode.daikin.DaikinConfig;
 import org.magcode.daikin.DaikinMqttClient;
 
 import net.jonathangiles.daikin.IDaikin;
+import net.jonathangiles.daikin.enums.Mode;
 import net.jonathangiles.daikin.util.DaikinUnreachableException;
 
 public class MqttNodePublisher implements Runnable {
@@ -39,7 +40,7 @@ public class MqttNodePublisher implements Runnable {
 			try {
 				daikinDevice.readDaikinState();
 			} catch (DaikinUnreachableException e1) {
-				logger.info("Daikin {} is unreachable", value.getName());
+				logger.debug("Daikin {} is unreachable", value.getName());
 			}
 			try {
 
@@ -57,8 +58,14 @@ public class MqttNodePublisher implements Runnable {
 				message.setPayload(Boolean.toString(daikinDevice.isOn()).getBytes());
 				this.mqttClient.publish(nodePropTopic + Constants.PR_POWER, message);
 
-				message.setPayload(daikinDevice.getMode().toString().getBytes());
-				this.mqttClient.publish(nodePropTopic + Constants.PR_MODE, message);
+				// we force "none" if the device is OFF
+				if (daikinDevice.isOn()) {
+					message.setPayload(daikinDevice.getMode().toString().getBytes());
+					this.mqttClient.publish(nodePropTopic + Constants.PR_MODE, message);
+				} else {
+					message.setPayload(Mode.None.toString().getBytes());
+					this.mqttClient.publish(nodePropTopic + Constants.PR_MODE, message);					
+				}
 
 				message.setPayload(Float.toString(daikinDevice.getTargetTemperature()).getBytes());
 				this.mqttClient.publish(nodePropTopic + Constants.PR_TARGETTEMP, message);

@@ -41,7 +41,7 @@ public class MqttDevicePublisher implements Runnable {
 			try {
 				daikinDevice.readDaikinState();
 			} catch (DaikinUnreachableException e1) {
-				logger.info("Daikin {} is unreachable", value.getName());
+				logger.debug("Daikin {} is unreachable", value.getName());
 			}
 			try {
 				String deviceTopic = topic + "/" + value.getName();

@@ -49,11 +49,34 @@ public class MqttSubscriber implements MqttCallback {
 					Float targetTemp = Float.parseFloat(message.toString());
 					if (targetTemp > 9 && targetTemp < 30) {
 						targetDaikin.getDaikin().setTargetTemperature(targetTemp);
-						System.out.println("Set targettemp=" + targetTemp + " for " + node);
+						logger.info("Send targettemp={} to {}", targetTemp, targetDaikin.getName());
 					}
 					break;
 				case Constants.PR_MODE:
-					targetDaikin.getDaikin().setMode(Mode.Heat);
+					String givenMode = message.toString();
+					Mode mode = Mode.None;
+					try {
+						mode = Mode.valueOf(givenMode);
+					} catch (IllegalArgumentException e) {
+						logger.error("Invalid mode '{}' given", givenMode);
+						break;
+					}
+					
+					// somebody set mode=non. We turn the AC off
+					if (mode == Mode.None) {
+						logger.info("Sending power=off to {}", targetDaikin.getName());
+						targetDaikin.getDaikin().setOn(false);
+						break;
+					}
+					// for any other mode we check if AC is already on. If not we turn it on and set
+					// mode afterwards.
+					if (!targetDaikin.getDaikin().isOn()) {
+						logger.info("Sending power=on to {}", targetDaikin.getName());
+						targetDaikin.getDaikin().setOn(true);
+						Thread.sleep(200);
+					}
+					logger.info("Sending mode={} to {}", mode, targetDaikin.getName());
+					targetDaikin.getDaikin().setMode(mode);
 					break;
 				case Constants.PR_POWER:
 					String messageString = message.toString();

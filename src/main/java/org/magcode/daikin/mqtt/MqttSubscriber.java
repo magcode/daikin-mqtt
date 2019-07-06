@@ -11,6 +11,7 @@ import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
 
+import net.jonathangiles.daikin.IDaikin;
 import net.jonathangiles.daikin.enums.Mode;
 import net.jonathangiles.daikin.util.DaikinUnreachableException;
 
@@ -39,6 +40,11 @@ public class MqttSubscriber implements MqttCallback {
 			DaikinConfig targetDaikin = daikins.get(node);
 
 			try {
+				IDaikin daikin = targetDaikin.getDaikin();
+				if (daikin == null) {
+					logger.warn("dakin {} not initialized?", node);
+					return;
+				}
 				targetDaikin.getDaikin().readDaikinState();
 
 				String targetProperty = StringUtils.substringAfter(topic, rootTopic + "/" + node + "/aircon/");
@@ -61,7 +67,7 @@ public class MqttSubscriber implements MqttCallback {
 						logger.error("Invalid mode '{}' given", givenMode);
 						break;
 					}
-					
+
 					// somebody set mode=non. We turn the AC off
 					if (mode == Mode.None) {
 						logger.info("Sending power=off to {}", targetDaikin.getName());

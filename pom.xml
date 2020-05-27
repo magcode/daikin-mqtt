@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.magcode</groupId>
 	<artifactId>daikin-mqtt</artifactId>
-	<version>0.0.5</version>
+	<version>1.0.0</version>
 	<repositories>
 		<repository>
 			<id>Eclipse Paho Repo</id>
@@ -57,7 +57,7 @@
 		<dependency>
 			<groupId>org.eclipse.paho</groupId>
 			<artifactId>org.eclipse.paho.client.mqttv3</artifactId>
-			<version>1.2.0</version>
+			<version>1.2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>net.jonathangiles.daikin</groupId>

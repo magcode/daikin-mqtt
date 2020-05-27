@@ -61,14 +61,7 @@ public class MqttDevicePublisher implements Runnable {
 					e.printStackTrace();
 				}
 
-				// state
-				if (daikinDevice.isReachable()) {
-					message.setPayload("ready".getBytes());
-				} else {
-					message.setPayload("lost".getBytes());
-				}
 
-				this.mqttClient.publish(deviceTopic + "/$state", message);
 
 				// Homie version
 				message.setPayload("3.0.0".getBytes());
@@ -82,7 +75,7 @@ public class MqttDevicePublisher implements Runnable {
 				// firmware
 				message.setPayload("daikin-mqtt".getBytes());
 				this.mqttClient.publish(deviceTopic + "/$fw/name", message);
-				message.setPayload("0.0.3".getBytes());
+				message.setPayload("1.0.0".getBytes());
 				this.mqttClient.publish(deviceTopic + "/$fw/version", message);
 
 				// nodes
@@ -110,6 +103,7 @@ public class MqttDevicePublisher implements Runnable {
 				this.mqttClient.publish(nodePropTopic + Constants.PR_FAN + Constants.PR_SETTABLE, message);
 				this.mqttClient.publish(nodePropTopic + Constants.PR_FANDIR + Constants.PR_SETTABLE, message);
 				this.mqttClient.publish(nodePropTopic + Constants.PR_MODE + Constants.PR_SETTABLE, message);
+				this.mqttClient.publish(nodePropTopic + Constants.PR_POWER + Constants.PR_SETTABLE, message);
 
 			} catch (MqttException e) {
 				logger.error("MQTT error", e);

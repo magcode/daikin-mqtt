@@ -23,6 +23,7 @@ import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
+import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.magcode.daikin.mqtt.MqttSubscriber;
 import org.magcode.daikin.mqtt.MqttDevicePublisher;
 import org.magcode.daikin.mqtt.MqttNodePublisher;
@@ -30,6 +31,11 @@ import org.magcode.daikin.mqtt.MqttNodePublisher;
 import net.jonathangiles.daikin.DaikinFactory;
 import net.jonathangiles.daikin.IDaikin;
 
+/**
+ * @author magcode
+ *          MQTT Gateway for Daikin Wifi Adapter 
+ *
+ */
 public class DaikinMqttClient {
 	private static Map<String, DaikinConfig> daikins;
 	private static String mqttServer;
@@ -69,25 +75,21 @@ public class DaikinMqttClient {
 		Runnable devicePublisher = new MqttDevicePublisher(daikins, rootTopic, mqttClient, deviceRefresh);
 		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 15, deviceRefresh,
 				TimeUnit.SECONDS);
-		
+
 		Runtime.getRuntime().addShutdownHook(new Thread() {
 			@Override
 			public void run() {
 				Logger logger2 = LogManager.getLogger("shutdown");
 				try {
-					
 					MqttMessage message = new MqttMessage();
 					message.setPayload("disconnected".getBytes());
 					message.setRetained(true);
 					mqttClient.publish(rootTopic + "/$state", message);
-
 					mqttClient.disconnect();
 					logger2.info("Disconnected from MQTT server");
-
 					nodePublisherFuture.cancel(true);
 					devicePublisherFuture.cancel(true);
 					((LifeCycle) LogManager.getContext()).stop();
-
 				} catch (MqttException e) {
 					logger2.error("Error during shutdown", e);
 				}
@@ -104,11 +106,11 @@ public class DaikinMqttClient {
 					DaikinMqttClient.class.getProtectionDomain().getCodeSource().getLocation().getPath());
 			String propertiesPath = jarPath.getParentFile().getAbsolutePath();
 			String filePath = propertiesPath + "/daikin.properties";
-			System.out.println("Loading properties from " + filePath);
+			logger.info("Loading properties from " + filePath);
 			input = new FileInputStream(filePath);
 			props.load(input);
 
-			rootTopic = props.getProperty("topic", "something");
+			rootTopic = props.getProperty("rootTopic", "home");
 			refresh = Integer.parseInt(props.getProperty("refresh", "60"));
 			mqttServer = props.getProperty("mqttServer", "tcp://localhost");
 			Enumeration<?> e = props.propertyNames();
@@ -127,7 +129,7 @@ public class DaikinMqttClient {
 				}
 			}
 		} catch (IOException ex) {
-			ex.printStackTrace();
+			logger.error("Could not read properties", ex);
 		} finally {
 			if (input != null) {
 				try {
@@ -146,10 +148,11 @@ public class DaikinMqttClient {
 		} catch (UnknownHostException e) {
 			logger.error("Failed to get hostname", e);
 		}
-		mqttClient = new MqttClient(mqttServer, "client-for-daikin-on-" + hostName);
+		mqttClient = new MqttClient(mqttServer, "client-for-daikin-on-" + hostName, new MemoryPersistence());
 		MqttConnectOptions connOpt = new MqttConnectOptions();
-		connOpt.setCleanSession(false);
+		connOpt.setCleanSession(true);
 		connOpt.setKeepAliveInterval(30);
+		connOpt.setMaxInflight(100);
 		connOpt.setAutomaticReconnect(true);
 		mqttClient.setCallback(new MqttSubscriber(daikins, rootTopic));
 		mqttClient.connect();

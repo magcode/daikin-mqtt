@@ -1,5 +1,7 @@
 package org.magcode.daikin;
 
+import java.util.Date;
+
 import net.jonathangiles.daikin.IDaikin;
 
 public class DaikinConfig {
@@ -7,6 +9,7 @@ public class DaikinConfig {
 	private String name;
 	private DaikinType type;
 	private IDaikin daikin;
+	private Date onlineSince;
 
 	public DaikinType getType() {
 		return type;
@@ -38,5 +41,13 @@ public class DaikinConfig {
 
 	public void setDaikin(IDaikin daikin) {
 		this.daikin = daikin;
+	}
+
+	public Date getOnlineSince() {
+		return onlineSince;
+	}
+
+	public void setOnlineSince(Date onlineSince) {
+		this.onlineSince = onlineSince;
 	}
 }

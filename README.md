@@ -4,8 +4,6 @@ Based on the (fork of) [Daikin Java interface](https://bitbucket.org/m-do/jdaiki
 
 It aims to be compliant to the [Homie convention](https://homieiot.github.io).
 
-You can keep this service running, even when powering off your Daikin AC device completely. Once it comes back online it will be reported via MQTT (`$state=ready`, compare with [Homie Device Lifecycle](https://homieiot.github.io/specification/#device-lifecycle)).
-
 This software has only been tested with the Daikin **BRP069A42** adapter. Others may work. Please test and let me know.
 
 # Properties file
@@ -53,6 +51,8 @@ WorkingDirectory=/var/javaapps/daikin
 WantedBy=multi-user.target
 ```
 
+You can keep this service running, even when powering off your Daikin AC device completely. Once it comes back online it will be reported via MQTT (`$state=ready`, compare with [Homie Device Lifecycle](https://homieiot.github.io/specification/#device-lifecycle)).
+
 # MQTT structure
 
 Following the homie convention the interface will post the following messages every 5 minutes.
@@ -77,7 +77,7 @@ home/ac-room1/aircon/power/$settable ("true")
 ```
 
 
-If online, the device will send the following messages every xx seconds (as configured in `daikin.properties`) :
+If online, the device will send the following messages every xx seconds (as configured in `daikin.properties`):
 
 ```
 home/ac-room1/$stats/uptime (seconds since the adapter is reachable)

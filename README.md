@@ -1,11 +1,12 @@
 # daikin-mqtt
-MQTT interface for Daikin AC devices. It aims to be compliant to the [Homie convention](https://homieiot.github.io)).
+MQTT interface for Daikin AC devices. 
 Based on the (fork of) [Daikin Java interface](https://bitbucket.org/m-do/jdaikin) of Jonathan Giles.
+
+It aims to be compliant to the [Homie convention](https://homieiot.github.io).
 
 You can keep this service running, even when powering off your Daikin AC device completely. Once it comes back online it will be reported via MQTT (`$state=ready`, compare with [Homie Device Lifecycle](https://homieiot.github.io/specification/#device-lifecycle)).
 
-Notes 
-* This software has only been tested with BRP069A42. Others may work. Please test and let me know.
+This software has only been tested with the Daikin **BRP069A42** adapter. Others may work. Please test and let me know.
 
 # Properties file
 You need a `daikin.properties` file:

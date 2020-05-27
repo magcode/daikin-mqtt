@@ -1,6 +1,6 @@
 # daikin-mqtt
 MQTT interface for Daikin AC devices. It aims to be compliant to the [Homie convention](https://homieiot.github.io)).
-Based on (a fork of) [Daikin Java interface](https://bitbucket.org/m-do/jdaikin) of Jonathan Giles.
+Based on the (fork of) [Daikin Java interface](https://bitbucket.org/m-do/jdaikin) of Jonathan Giles.
 
 You can keep this service running, even when powering off your Daikin AC device completely. Once it comes back online it will be reported via MQTT (`$state=ready`, compare with [Homie Device Lifecycle](https://homieiot.github.io/specification/#device-lifecycle)).
 
@@ -13,11 +13,11 @@ You need a `daikin.properties` file:
 ```
 rootTopic=home                    # the mqtt root topic
 refresh=60                        # number of seconds for MQTT status updates. Do not go below 60!
-mqttServer=tcp://192.168.0.1	   # IP or hostname of your mqtt broker
+mqttServer=tcp://192.168.0.1      # IP or hostname of your mqtt broker
 
-daikin1.host=192.168.0.2	         # IP adress of your first Daikin Wifi adapter
-daikin1.type=wireless				   # only "wireless" is supported
-daikin1.name=ac-room1				   # a name for the Daikin device, used in the MQTT topic
+daikin1.host=192.168.0.2          # IP adress of your first Daikin Wifi adapter
+daikin1.type=wireless             # only "wireless" is supported
+daikin1.name=ac-room1             # a name for the Daikin device, used in the MQTT topic
 
 daikin2.host=192.168.0.3
 daikin2.type=wireless
@@ -117,7 +117,7 @@ home/ac-room1/aircon/mode/$set
 
 Notes
 * `otemp` will go to `0` in case the device is not cooling or heating.
-* You actually don't need to use `power` to turn the AC on. Sending `mode=Cool` or `mode=None` does the job as well.
+* You actually don't need to use `power` to turn the AC on or off. Sending `mode=Cool` or `mode=None` does the job as well.
 * Possible values for `mode`, `fandirection` etc. can be found [here](https://bitbucket.org/m-do/jdaikin/src/default/src/main/java/net/jonathangiles/daikin/enums/) 
 
 # Openhab integration example
@@ -136,9 +136,9 @@ Thing mqtt:topic:ac-room1 "Aircondition room 1" (mqtt:broker:mosquitto) {
 ```
 ## Items
 ```
-Number acRoom1TempTarget  "AC Room 1 target temp [%.1f °C]" { channel="mqtt:topic:ac-room1:targettemp" }
-Number acRoom1TempCur  "AC Room 1 current temp [%.1f °C]" { channel="mqtt:topic:ac-room1:intemp" }
-Number acRoom1TempOt  "AC Room 1 temp outside [%.1f °C]" { channel="mqtt:topic:ac-room1:outtemp" }
+Number acRoom1TempTarget  "AC Room 1 target temp [%.1f Â°C]" { channel="mqtt:topic:ac-room1:targettemp" }
+Number acRoom1TempCur  "AC Room 1 current temp [%.1f Â°C]" { channel="mqtt:topic:ac-room1:intemp" }
+Number acRoom1TempOt  "AC Room 1 temp outside [%.1f Â°C]" { channel="mqtt:topic:ac-room1:outtemp" }
 String acRoom1Mode  "AC Room 1 Mode" { channel="mqtt:topic:ac-room1:mode" }
 Switch acRoom1Power "AC Room 1 Power" { channel="mqtt:topic:ac-room1:power" }
 Switch acRoom1Online "AC Room 1 Online" { channel="mqtt:topic:ac-room1:online" }

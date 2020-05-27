@@ -89,7 +89,6 @@ home/ac-room1/aircon/intemp (inside temperature)
 home/ac-room1/aircon/otemp (outside temperature)
 home/ac-room1/aircon/fan (fan mode)
 home/ac-room1/aircon/fandirection (fan direction)
-
 ```
 
 In case the device gets offline the following messages are sent every xx seconds:

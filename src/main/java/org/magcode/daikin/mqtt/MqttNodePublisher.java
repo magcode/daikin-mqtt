@@ -40,8 +40,7 @@ public class MqttNodePublisher implements Runnable {
 			IDaikin daikinDevice = daikinConfig.getDaikin();
 			String deviceTopic = topic + "/" + daikinConfig.getName();
 			String nodeTopic = deviceTopic + "/" + DaikinMqttClient.nodeName + "/";
-			MqttMessage message = new MqttMessage();
-			message.setRetained(true);
+
 			try {
 				daikinDevice.readDaikinState();
 				if (daikinConfig.getOnlineSince() == null) {
@@ -50,59 +49,81 @@ public class MqttNodePublisher implements Runnable {
 
 				Date now = new Date();
 				long uptime = (now.getTime() - daikinConfig.getOnlineSince().getTime()) / 1000;
-				message.setPayload(("" + uptime).getBytes());
+				MqttMessage message = new MqttMessage(("" + uptime).getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(deviceTopic + "/$stats/uptime", message);
 
 				// current AC data
-				message.setPayload(Boolean.toString(daikinDevice.isOn()).getBytes());
+				message = new MqttMessage(Boolean.toString(daikinDevice.isOn()).getBytes());
 				this.mqttClient.publish(nodeTopic + Constants.PR_POWER, message);
 
 				// we force "none" if the device is OFF
 				if (daikinDevice.isOn()) {
-					message.setPayload(daikinDevice.getMode().toString().getBytes());
+					message = new MqttMessage(daikinDevice.getMode().toString().getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_MODE, message);
 				} else {
-					message.setPayload(Mode.None.toString().getBytes());
+					message = new MqttMessage(Mode.None.toString().getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_MODE, message);
 				}
 
-				message.setPayload(Float.toString(daikinDevice.getTargetTemperature()).getBytes());
+				message = new MqttMessage(Float.toString(daikinDevice.getTargetTemperature()).getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(nodeTopic + Constants.PR_TARGETTEMP, message);
 
-				message.setPayload(Float.toString(daikinDevice.getInsideTemperature()).getBytes());
+				message = new MqttMessage(Float.toString(daikinDevice.getInsideTemperature()).getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(nodeTopic + Constants.PR_INTEMP, message);
 
-				message.setPayload(Float.toString(daikinDevice.getOutsideTemperature()).getBytes());
+				message = new MqttMessage(Float.toString(daikinDevice.getOutsideTemperature()).getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(nodeTopic + Constants.PR_OUTTEMP, message);
 
-				message.setPayload(daikinDevice.getFan().toString().getBytes());
+				message = new MqttMessage(daikinDevice.getFan().toString().getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(nodeTopic + Constants.PR_FAN, message);
 
-				message.setPayload(daikinDevice.getFanDirection().toString().getBytes());
+				message = new MqttMessage(daikinDevice.getFanDirection().toString().getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(nodeTopic + Constants.PR_FANDIR, message);
 
-				message.setPayload("ready".getBytes());
+				message = new MqttMessage("ready".getBytes());
+				message.setRetained(true);
 				this.mqttClient.publish(deviceTopic + "/$state", message);
 
 			} catch (DaikinUnreachableException e1) {
 				logger.debug("Daikin {} is unreachable", daikinConfig.getName());
 				daikinConfig.setOnlineSince(null);
 				try {
-					message.setPayload(("0").getBytes());
+					MqttMessage message = new MqttMessage(("0").getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(deviceTopic + "/$stats/uptime", message);
-					message.setPayload("lost".getBytes());
+
+					message = new MqttMessage("lost".getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(deviceTopic + "/$state", message);
-					message.setPayload(Mode.None.toString().getBytes());
+
+					message = new MqttMessage(Mode.None.toString().getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_MODE, message);
-					message.setPayload("false".getBytes());
+
+					message = new MqttMessage("false".getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_POWER, message);
-					message.setPayload("0".getBytes());
+
+					message = new MqttMessage("0".getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_OUTTEMP, message);
 					this.mqttClient.publish(nodeTopic + Constants.PR_INTEMP, message);
 					this.mqttClient.publish(nodeTopic + Constants.PR_TARGETTEMP, message);
-					message.setPayload(Fan.None.toString().getBytes());
+
+					message = new MqttMessage(Fan.None.toString().getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_FAN, message);
-					message.setPayload(FanDirection.None.toString().getBytes());
+
+					message = new MqttMessage(FanDirection.None.toString().getBytes());
+					message.setRetained(true);
 					this.mqttClient.publish(nodeTopic + Constants.PR_FANDIR, message);
 				} catch (MqttException e) {
 					logger.error("MQTT error", e);

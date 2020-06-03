@@ -24,16 +24,16 @@ import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
-import org.magcode.daikin.mqtt.MqttSubscriber;
-import org.magcode.daikin.mqtt.MqttDevicePublisher;
-import org.magcode.daikin.mqtt.MqttNodePublisher;
+import org.magcode.daikin.mqtt.Subscriber;
+import org.magcode.daikin.mqtt.DevicePublisher;
+import org.magcode.daikin.mqtt.NodePublisher;
 
 import net.jonathangiles.daikin.DaikinFactory;
 import net.jonathangiles.daikin.IDaikin;
+import java.util.concurrent.Semaphore;
 
 /**
- * @author magcode
- *          MQTT Gateway for Daikin Wifi Adapter 
+ * @author magcode MQTT Gateway for Daikin Wifi Adapter
  *
  */
 public class DaikinMqttClient {
@@ -44,10 +44,12 @@ public class DaikinMqttClient {
 	private static MqttClient mqttClient;
 	public static final String nodeName = "aircon";
 	private static final int deviceRefresh = 600;
+	private static final int MAX_INFLIGHT = 100;
+	private static Semaphore semaphore;
 	private static Logger logger = LogManager.getLogger(DaikinMqttClient.class);
 
 	public static void main(String[] args) throws Exception {
-
+		semaphore = new Semaphore(MAX_INFLIGHT);
 		daikins = new HashMap<String, DaikinConfig>();
 		readProps();
 
@@ -67,12 +69,12 @@ public class DaikinMqttClient {
 
 		// start mqtt node publisher
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		Runnable nodePublisher = new MqttNodePublisher(daikins, rootTopic, mqttClient);
+		Runnable nodePublisher = new NodePublisher(daikins, rootTopic, mqttClient, semaphore);
 		ScheduledFuture<?> nodePublisherFuture = executor.scheduleAtFixedRate(nodePublisher, 10, refresh,
 				TimeUnit.SECONDS);
 
 		// start mqtt device publisher
-		Runnable devicePublisher = new MqttDevicePublisher(daikins, rootTopic, mqttClient, deviceRefresh);
+		Runnable devicePublisher = new DevicePublisher(daikins, rootTopic, mqttClient, deviceRefresh, semaphore);
 		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 15, deviceRefresh,
 				TimeUnit.SECONDS);
 
@@ -152,9 +154,9 @@ public class DaikinMqttClient {
 		MqttConnectOptions connOpt = new MqttConnectOptions();
 		connOpt.setCleanSession(true);
 		connOpt.setKeepAliveInterval(30);
-		connOpt.setMaxInflight(100);
+		connOpt.setMaxInflight(MAX_INFLIGHT);
 		connOpt.setAutomaticReconnect(true);
-		mqttClient.setCallback(new MqttSubscriber(daikins, rootTopic));
+		mqttClient.setCallback(new Subscriber(daikins, rootTopic, semaphore));
 		mqttClient.connect();
 		logger.info("Connected to MQTT broker.");
 		for (Entry<String, DaikinConfig> entry : daikins.entrySet()) {

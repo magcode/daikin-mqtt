@@ -1,6 +1,7 @@
 package org.magcode.daikin.mqtt;
 
 import java.util.Map;
+import java.util.concurrent.Semaphore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -15,19 +16,21 @@ import net.jonathangiles.daikin.IDaikin;
 import net.jonathangiles.daikin.enums.Mode;
 import net.jonathangiles.daikin.util.DaikinUnreachableException;
 
-public class MqttSubscriber implements MqttCallback {
+public class Subscriber implements MqttCallback {
 	private Map<String, DaikinConfig> daikins;
 	private String rootTopic;
-	private static Logger logger = LogManager.getLogger(MqttSubscriber.class);
+	private static Logger logger = LogManager.getLogger(Subscriber.class);
+	private Semaphore semaphore;
 
-	public MqttSubscriber(Map<String, DaikinConfig> daikins, String topic) {
+	public Subscriber(Map<String, DaikinConfig> daikins, String topic, Semaphore semaphore) {
 		this.daikins = daikins;
 		this.rootTopic = topic;
+		this.semaphore = semaphore;
 	}
 
 	@Override
 	public void connectionLost(Throwable cause) {
-
+		logger.warn("MQTT connection lost", cause);
 	}
 
 	@Override
@@ -103,6 +106,6 @@ public class MqttSubscriber implements MqttCallback {
 
 	@Override
 	public void deliveryComplete(IMqttDeliveryToken token) {
-
+		semaphore.release();
 	}
 }

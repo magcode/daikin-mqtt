@@ -108,10 +108,10 @@ home/ac-room1/aircon/fandirection None
 The following topics can be used to send messages:
 
 ```
-home/ac-room1/aircon/targettemp/$set
-home/ac-room1/aircon/fan/$set
-home/ac-room1/aircon/fandirection/$set
-home/ac-room1/aircon/mode/$set
+home/ac-room1/aircon/targettemp/set
+home/ac-room1/aircon/fan/set
+home/ac-room1/aircon/fandirection/set
+home/ac-room1/aircon/mode/set
 
 ```
 

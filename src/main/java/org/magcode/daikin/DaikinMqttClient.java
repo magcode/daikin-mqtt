@@ -16,9 +16,11 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 
+import org.apache.logging.log4j.Level;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.apache.logging.log4j.core.LifeCycle;
+import org.apache.logging.log4j.core.config.Configurator;
 import org.eclipse.paho.client.mqttv3.MqttClient;
 import org.eclipse.paho.client.mqttv3.MqttConnectOptions;
 import org.eclipse.paho.client.mqttv3.MqttException;
@@ -46,11 +48,13 @@ public class DaikinMqttClient {
 	private static final int MAX_INFLIGHT = 100;
 	private static Semaphore semaphore;
 	private static Logger logger = LogManager.getLogger(DaikinMqttClient.class);
+	private static String logLevel = "INFO";
 
 	public static void main(String[] args) throws Exception {
 		semaphore = new Semaphore(MAX_INFLIGHT);
 		daikins = new HashMap<String, DaikinConfig>();
 		readProps();
+		reConfigureLogger();
 
 		// connect to MQTT broker
 		startMQTTClient();
@@ -76,10 +80,17 @@ public class DaikinMqttClient {
 			public void run() {
 				Logger logger2 = LogManager.getLogger("shutdown");
 				try {
-					MqttMessage message = new MqttMessage();
-					message.setPayload("disconnected".getBytes());
-					message.setRetained(true);
-					mqttClient.publish(rootTopic + "/$state", message);
+
+					for (Entry<String, DaikinConfig> entry : daikins.entrySet()) {
+						DaikinConfig daikinConfig = entry.getValue();
+						MqttMessage message = new MqttMessage();
+						message.setPayload("lost".getBytes());
+						message.setRetained(true);
+						String deviceTopic = rootTopic + "/" + daikinConfig.getName();
+						mqttClient.publish(deviceTopic + "/$state", message);
+						logger2.info("Published '{}' to '{}'", message, deviceTopic + "/$state");
+					}
+
 					mqttClient.disconnect();
 					logger2.info("Disconnected from MQTT server");
 					nodePublisherFuture.cancel(true);
@@ -108,6 +119,7 @@ public class DaikinMqttClient {
 			rootTopic = props.getProperty("rootTopic", "home");
 			refresh = Integer.parseInt(props.getProperty("refresh", "60"));
 			mqttServer = props.getProperty("mqttServer", "tcp://localhost");
+			logLevel = props.getProperty("logLevel", "INFO");
 			Enumeration<?> e = props.propertyNames();
 
 			while (e.hasMoreElements()) {
@@ -132,6 +144,10 @@ public class DaikinMqttClient {
 				}
 			}
 		}
+	}
+
+	private static void reConfigureLogger() {
+		Configurator.setRootLevel(Level.forName(logLevel, 0));
 	}
 
 	private static void startMQTTClient() throws MqttException {

@@ -142,7 +142,7 @@ public class DaikinConnector {
 			Map<String, String> properties = mapFromStateString(responseBody);
 			String ret = properties.get("ret");
 			if (!"OK".equals(ret)) {
-				logger.warn("Got unexpected value for 'ret': {}", ret);
+				logger.warn("Got unexpected value for 'ret': {}. Url was '{}' and response was '{}'", ret,uri.toString(), responseBody);
 			}
 			return properties;
 

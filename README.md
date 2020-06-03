@@ -13,6 +13,7 @@ You need a `daikin.properties` file:
 rootTopic=home                    # the mqtt root topic
 refresh=60                        # number of seconds for MQTT status updates. Do not go below 60!
 mqttServer=tcp://192.168.0.1      # IP or hostname of your mqtt broker
+logLevel=INFO                     # logLevel
 
 daikin1.host=192.168.0.2          # IP adress of your first Daikin Wifi adapter
 daikin1.name=ac-room1             # a name for the Daikin device, used in the MQTT topic
@@ -42,7 +43,7 @@ Wants=network-online.target
 After=network-online.target
 [Service]
 User=daikin
-ExecStart=/usr/bin/java -XX:-UsePerfData -jar /var/javaapps/daikin/daikin-mqtt-1.0.0-jar-with-dependencies.jar
+ExecStart=/usr/bin/java -XX:-UsePerfData -jar /var/javaapps/daikin/daikin-mqtt-1.1.0-jar-with-dependencies.jar
 SuccessExitStatus=143
 WorkingDirectory=/var/javaapps/daikin
 [Install]

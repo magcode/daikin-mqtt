@@ -1,9 +1,9 @@
-package org.magcode.daikin;
+package org.magcode.daikin.mqtt;
 
 import java.util.Arrays;
 import java.util.List;
 
-public class Constants {
+public class TopicConstants {
 	public final static String PR_TARGETTEMP = "targettemp";
 	public final static String PR_OUTTEMP = "otemp";
 	public final static String PR_INTEMP = "intemp";

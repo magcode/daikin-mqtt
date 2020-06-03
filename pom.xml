@@ -4,7 +4,7 @@
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.magcode</groupId>
 	<artifactId>daikin-mqtt</artifactId>
-	<version>1.0.2</version>
+	<version>1.1.0</version>
 	<repositories>
 		<repository>
 			<id>Eclipse Paho Repo</id>
@@ -60,19 +60,24 @@
 			<version>1.2.4</version>
 		</dependency>
 		<dependency>
-			<groupId>net.jonathangiles.daikin</groupId>
-			<artifactId>jdaikin</artifactId>
-			<version>1.1</version>
-		</dependency>
-		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-lang3</artifactId>
 			<version>3.0</version>
 		</dependency>
 		<dependency>
+			<groupId>org.apache.httpcomponents.client5</groupId>
+			<artifactId>httpclient5</artifactId>
+			<version>5.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.logging.log4j</groupId>
 			<artifactId>log4j-core</artifactId>
 			<version>2.13.3</version>
+		</dependency>
+		<dependency>
+			<groupId>org.slf4j</groupId>
+			<artifactId>slf4j-nop</artifactId>
+			<version>1.7.30</version>
 		</dependency>
 	</dependencies>
 </project>

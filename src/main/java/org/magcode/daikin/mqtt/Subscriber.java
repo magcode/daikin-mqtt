@@ -9,12 +9,14 @@ import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
 import org.eclipse.paho.client.mqttv3.MqttCallback;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
-import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
-
-import net.jonathangiles.daikin.IDaikin;
-import net.jonathangiles.daikin.enums.Mode;
-import net.jonathangiles.daikin.util.DaikinUnreachableException;
+import org.magcode.daikin.connector.DaikinConnector;
+import org.magcode.daikin.connector.DaikinState;
+import org.magcode.daikin.connector.DaikinUnreachableException;
+import org.magcode.daikin.connector.enums.Fan;
+import org.magcode.daikin.connector.enums.FanDirection;
+import org.magcode.daikin.connector.enums.Mode;
+import org.magcode.daikin.connector.enums.Power;
 
 public class Subscriber implements MqttCallback {
 	private Map<String, DaikinConfig> daikins;
@@ -43,59 +45,68 @@ public class Subscriber implements MqttCallback {
 			DaikinConfig targetDaikin = daikins.get(node);
 
 			try {
-				IDaikin daikin = targetDaikin.getDaikin();
+				DaikinConnector daikin = targetDaikin.getDaikin();
 				if (daikin == null) {
 					logger.warn("dakin {} not initialized?", node);
 					return;
 				}
-				targetDaikin.getDaikin().readDaikinState();
+
+				DaikinState state = targetDaikin.getDaikin().getState();
 
 				String targetProperty = StringUtils.substringAfter(topic, rootTopic + "/" + node + "/aircon/");
 				targetProperty = StringUtils.substringBefore(targetProperty, "/");
 
 				switch (targetProperty) {
-				case Constants.PR_TARGETTEMP:
+				case TopicConstants.PR_TARGETTEMP:
 					Float targetTemp = Float.parseFloat(message.toString());
 					if (targetTemp > 9 && targetTemp < 30) {
+						logger.info("Sending targettemp={} to {}", targetTemp, targetDaikin.getName());
+						targetDaikin.getDaikin().updateStatus();
 						targetDaikin.getDaikin().setTargetTemperature(targetTemp);
-						logger.info("Send targettemp={} to {}", targetTemp, targetDaikin.getName());
 					}
 					break;
-				case Constants.PR_MODE:
+				case TopicConstants.PR_MODE:
 					String givenMode = message.toString();
-					Mode mode = Mode.None;
-					try {
-						mode = Mode.valueOf(givenMode);
-					} catch (IllegalArgumentException e) {
-						logger.error("Invalid mode '{}' given", givenMode);
-						break;
-					}
-
-					// somebody set mode=non. We turn the AC off
+					Mode mode = Mode.getFromString(givenMode);
+					// Turn off
 					if (mode == Mode.None) {
 						logger.info("Sending power=off to {}", targetDaikin.getName());
-						targetDaikin.getDaikin().setOn(false);
+						targetDaikin.getDaikin().updateStatus();
+						targetDaikin.getDaikin().setPower(Power.Off);
 						break;
 					}
 					// for any other mode we check if AC is already on. If not we turn it on and set
 					// mode afterwards.
-					if (!targetDaikin.getDaikin().isOn()) {
+					if (state.getPower() != Power.On) {
 						logger.info("Sending power=on to {}", targetDaikin.getName());
-						targetDaikin.getDaikin().setOn(true);
+						targetDaikin.getDaikin().updateStatus();
+						targetDaikin.getDaikin().setPower(Power.On);
 						Thread.sleep(200);
 					}
 					logger.info("Sending mode={} to {}", mode, targetDaikin.getName());
+					targetDaikin.getDaikin().updateStatus();
 					targetDaikin.getDaikin().setMode(mode);
 					break;
-				case Constants.PR_POWER:
-					String messageString = message.toString();
-					if (StringUtils.isNotBlank(messageString)) {
-						Boolean turnOn = Boolean.parseBoolean(message.toString());
-						if (targetDaikin != null && targetDaikin.getDaikin() != null) {
-							logger.info("Sending power={} to {}", turnOn, targetDaikin.getName());
-							targetDaikin.getDaikin().setOn(turnOn);
-						}
-					}
+				case TopicConstants.PR_POWER:
+					String powerString = message.toString();
+					Power power = Power.valueOf(powerString);
+					logger.info("Sending power={} to {}", power, targetDaikin.getName());
+					targetDaikin.getDaikin().updateStatus();
+					targetDaikin.getDaikin().setPower(power);
+					break;
+				case TopicConstants.PR_FAN:
+					String fanString = message.toString();
+					Fan fan = Fan.getFromString(fanString);
+					logger.info("Sending fan={} to {}", fan, targetDaikin.getName());
+					targetDaikin.getDaikin().updateStatus();
+					targetDaikin.getDaikin().setFan(fan);
+					break;
+				case TopicConstants.PR_FANDIR:
+					String fanDirString = message.toString();
+					FanDirection fanDir = FanDirection.getFromString(fanDirString);
+					logger.info("Sending fanDirection={} to {}", fanDir, targetDaikin.getName());
+					targetDaikin.getDaikin().updateStatus();
+					targetDaikin.getDaikin().setFanDirection(fanDir);
 					break;
 				}
 			} catch (DaikinUnreachableException e1) {

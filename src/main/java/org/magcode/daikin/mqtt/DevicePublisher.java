@@ -10,12 +10,8 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
 import org.magcode.daikin.DaikinMqttClient;
-
-import net.jonathangiles.daikin.IDaikin;
-import net.jonathangiles.daikin.util.DaikinUnreachableException;
 
 public class DevicePublisher extends Publisher implements Runnable {
 	private String topic;
@@ -35,20 +31,13 @@ public class DevicePublisher extends Publisher implements Runnable {
 	@Override
 	public void run() {
 		for (Entry<String, DaikinConfig> entry : this.daikinHosts.entrySet()) {
-			DaikinConfig value = entry.getValue();
-			IDaikin daikinDevice = value.getDaikin();
-			try {
-				daikinDevice.readDaikinState();
-			} catch (DaikinUnreachableException e1) {
-				logger.debug("Daikin {} is unreachable", value.getName());
-			}
-
-			String deviceTopic = topic + "/" + value.getName();
+			DaikinConfig daikinConfig = entry.getValue();
+			String deviceTopic = topic + "/" + daikinConfig.getName();
 			String nodePropTopic = deviceTopic + "/" + DaikinMqttClient.nodeName + "/";
 
 			// IP address
 			try {
-				String ipAddr = StringUtils.substringAfter(daikinDevice.getHost(), "http://");
+				String ipAddr = StringUtils.substringAfter(daikinConfig.getHost(), "http://");
 				InetAddress address = InetAddress.getByName(ipAddr);
 				Publish(deviceTopic + "/$localip", address.getHostAddress());
 			} catch (UnknownHostException e) {
@@ -59,7 +48,7 @@ public class DevicePublisher extends Publisher implements Runnable {
 			Publish(deviceTopic + "/$homie", "3.0.0");
 
 			// name
-			Publish(deviceTopic + "/$name", "Aircondition - " + value.getName());
+			Publish(deviceTopic + "/$name", "Aircondition - " + daikinConfig.getName());
 
 			// firmware
 			Publish(deviceTopic + "/$fw/name", "daikin-mqtt");
@@ -77,14 +66,14 @@ public class DevicePublisher extends Publisher implements Runnable {
 			// node details
 			Publish(nodePropTopic + "$name", "Aircondition");
 			Publish(nodePropTopic + "$type", "Aircondition");
-			Publish(nodePropTopic + "$properties", String.join(",", Constants.PROPERTIES));
+			Publish(nodePropTopic + "$properties", String.join(",", TopicConstants.PROPERTIES));
 
 			// setable properties
-			Publish(nodePropTopic + Constants.PR_TARGETTEMP + Constants.PR_SETTABLE, true);
-			Publish(nodePropTopic + Constants.PR_FAN + Constants.PR_SETTABLE, true);
-			Publish(nodePropTopic + Constants.PR_FANDIR + Constants.PR_SETTABLE, true);
-			Publish(nodePropTopic + Constants.PR_MODE + Constants.PR_SETTABLE, true);
-			Publish(nodePropTopic + Constants.PR_POWER + Constants.PR_SETTABLE, true);
+			Publish(nodePropTopic + TopicConstants.PR_TARGETTEMP + TopicConstants.PR_SETTABLE, true);
+			Publish(nodePropTopic + TopicConstants.PR_FAN + TopicConstants.PR_SETTABLE, true);
+			Publish(nodePropTopic + TopicConstants.PR_FANDIR + TopicConstants.PR_SETTABLE, true);
+			Publish(nodePropTopic + TopicConstants.PR_MODE + TopicConstants.PR_SETTABLE, true);
+			Publish(nodePropTopic + TopicConstants.PR_POWER + TopicConstants.PR_SETTABLE, true);
 		}
 	}
 }

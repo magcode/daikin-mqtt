@@ -25,11 +25,10 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 import org.magcode.daikin.mqtt.Subscriber;
+import org.magcode.daikin.connector.DaikinConnector;
 import org.magcode.daikin.mqtt.DevicePublisher;
 import org.magcode.daikin.mqtt.NodePublisher;
 
-import net.jonathangiles.daikin.DaikinFactory;
-import net.jonathangiles.daikin.IDaikin;
 import java.util.concurrent.Semaphore;
 
 /**
@@ -58,13 +57,7 @@ public class DaikinMqttClient {
 
 		for (Entry<String, DaikinConfig> entry : daikins.entrySet()) {
 			DaikinConfig value = entry.getValue();
-			IDaikin daikin = null;
-			if (value.getType().equals(DaikinType.wireless)) {
-				daikin = DaikinFactory.createWirelessDaikin("http://" + value.getHost(), 0);
-			} else if (value.getType().equals(DaikinType.wired)) {
-				daikin = DaikinFactory.createWiredDaikin("http://" + value.getHost(), 0);
-			}
-			value.setDaikin(daikin);
+			value.setDaikin(new DaikinConnector(value.getHost()));
 		}
 
 		// start mqtt node publisher
@@ -124,8 +117,6 @@ public class DaikinMqttClient {
 						DaikinConfig one = new DaikinConfig();
 						one.setHost(props.getProperty("daikin" + i + ".host"));
 						one.setName(props.getProperty("daikin" + i + ".name"));
-						DaikinType type = DaikinType.valueOf(props.getProperty("daikin" + i + ".type"));
-						one.setType(type);
 						daikins.put(one.getName(), one);
 					}
 				}

@@ -1,6 +1,6 @@
 # daikin-mqtt
 MQTT interface for Daikin AC devices. 
-Based on the (fork of) [Daikin Java interface](https://bitbucket.org/m-do/jdaikin) of Jonathan Giles.
+Based on the work of [Jonathan Giles](https://bitbucket.org/JonathanGiles/jdaikin/src/default/).
 
 It aims to be compliant to the [Homie convention](https://homieiot.github.io).
 
@@ -15,11 +15,9 @@ refresh=60                        # number of seconds for MQTT status updates. D
 mqttServer=tcp://192.168.0.1      # IP or hostname of your mqtt broker
 
 daikin1.host=192.168.0.2          # IP adress of your first Daikin Wifi adapter
-daikin1.type=wireless             # only "wireless" is supported
 daikin1.name=ac-room1             # a name for the Daikin device, used in the MQTT topic
 
 daikin2.host=192.168.0.3
-daikin2.type=wireless
 daikin2.name=ac-room2
 ```
 
@@ -30,7 +28,7 @@ Notes
 # Running it
 It can be simply run with
 
-`java -jar /var/javaapps/daikin/daikin-mqtt-1.0.0-jar-with-dependencies.jar`
+`java -jar /var/javaapps/daikin/daikin-mqtt-1.1.0-jar-with-dependencies.jar`
 
 Don't forget to put the `daikin.properties` right beside the jar file.
 
@@ -130,7 +128,7 @@ Thing mqtt:topic:ac-room1 "Aircondition room 1" (mqtt:broker:mosquitto) {
         Type number : intemp "Inside temp" [ stateTopic="home/ac-room1/aircon/intemp"] 
         Type number : outtemp "Outside temp" [ stateTopic="home/ac-room1/aircon/otemp"] 
         Type number : targettemp "Target temp" [ stateTopic="home/ac-room1/aircon/targettemp"] 
-        Type switch : power "Power" [ stateTopic="home/ac-room1/aircon/power", commandTopic="home/ac-room1/aircon/power/set", on="true", off="false"]
+        Type switch : power "Power" [ stateTopic="home/ac-room1/aircon/power", commandTopic="home/ac-room1/aircon/power/set", on="1", off="0"]
         Type switch : online "Online" [ stateTopic="home/ac-room1/$state", on="ready", off="lost"]
 }
 ```

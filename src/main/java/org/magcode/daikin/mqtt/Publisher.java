@@ -40,7 +40,7 @@ public abstract class Publisher {
 			semaphore.acquire();
 			this.mqttClient.publish(topic, message);
 		} catch (InterruptedException e) {
-			logger.error("Interrupt", e);
+			logger.error("InterruptedException", e);
 		} catch (MqttPersistenceException e) {
 			logger.error("MqttPersistenceException", e);
 		} catch (MqttException e) {

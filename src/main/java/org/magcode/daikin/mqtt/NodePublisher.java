@@ -8,15 +8,15 @@ import java.util.concurrent.Semaphore;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
-import org.magcode.daikin.Constants;
 import org.magcode.daikin.DaikinConfig;
 import org.magcode.daikin.DaikinMqttClient;
-
-import net.jonathangiles.daikin.IDaikin;
-import net.jonathangiles.daikin.enums.Fan;
-import net.jonathangiles.daikin.enums.FanDirection;
-import net.jonathangiles.daikin.enums.Mode;
-import net.jonathangiles.daikin.util.DaikinUnreachableException;
+import org.magcode.daikin.connector.DaikinConnector;
+import org.magcode.daikin.connector.DaikinState;
+import org.magcode.daikin.connector.DaikinUnreachableException;
+import org.magcode.daikin.connector.enums.Fan;
+import org.magcode.daikin.connector.enums.FanDirection;
+import org.magcode.daikin.connector.enums.Mode;
+import org.magcode.daikin.connector.enums.Power;
 
 public class NodePublisher extends Publisher implements Runnable {
 	private String topic;
@@ -37,12 +37,13 @@ public class NodePublisher extends Publisher implements Runnable {
 		// nodes
 		for (Entry<String, DaikinConfig> entry : this.daikinHosts.entrySet()) {
 			DaikinConfig daikinConfig = entry.getValue();
-			IDaikin daikinDevice = daikinConfig.getDaikin();
+			DaikinConnector daikinDevice = daikinConfig.getDaikin();
 			String deviceTopic = topic + "/" + daikinConfig.getName();
 			String nodeTopic = deviceTopic + "/" + DaikinMqttClient.nodeName + "/";
-
 			try {
-				daikinDevice.readDaikinState();
+				daikinDevice.updateStatus();
+				DaikinState status = daikinDevice.getState();
+
 				if (daikinConfig.getOnlineSince() == null) {
 					daikinConfig.setOnlineSince(new Date());
 				}
@@ -51,21 +52,20 @@ public class NodePublisher extends Publisher implements Runnable {
 				long uptime = (now.getTime() - daikinConfig.getOnlineSince().getTime()) / 1000;
 				Publish(deviceTopic + "/$stats/uptime", "" + uptime);
 
-				// current AC data
-				Publish(nodeTopic + Constants.PR_POWER, daikinDevice.isOn());
+				Publish(nodeTopic + TopicConstants.PR_POWER, status.getPower().getValue());
 
 				// we force "none" if the device is OFF
-				if (daikinDevice.isOn()) {
-					Publish(nodeTopic + Constants.PR_MODE, daikinDevice.getMode().toString());
+				if (status.getPower() == Power.On) {
+					Publish(nodeTopic + TopicConstants.PR_MODE, status.getMode().toString());
 				} else {
-					Publish(nodeTopic + Constants.PR_MODE, Mode.None.toString());
+					Publish(nodeTopic + TopicConstants.PR_MODE, Mode.None.toString());
 				}
 
-				Publish(nodeTopic + Constants.PR_TARGETTEMP, daikinDevice.getTargetTemperature());
-				Publish(nodeTopic + Constants.PR_INTEMP, daikinDevice.getInsideTemperature());
-				Publish(nodeTopic + Constants.PR_OUTTEMP, daikinDevice.getOutsideTemperature());
-				Publish(nodeTopic + Constants.PR_FAN, daikinDevice.getFan().toString());
-				Publish(nodeTopic + Constants.PR_FANDIR, daikinDevice.getFanDirection().toString());
+				Publish(nodeTopic + TopicConstants.PR_TARGETTEMP, status.getTargetTemp());
+				Publish(nodeTopic + TopicConstants.PR_INTEMP, status.getInsideTemp());
+				Publish(nodeTopic + TopicConstants.PR_OUTTEMP, status.getOutsideTemp());
+				Publish(nodeTopic + TopicConstants.PR_FAN, status.getFan().toString());
+				Publish(nodeTopic + TopicConstants.PR_FANDIR, status.getFanDirection().toString());
 				Publish(deviceTopic + "/$state", "ready");
 
 			} catch (DaikinUnreachableException e1) {
@@ -73,13 +73,13 @@ public class NodePublisher extends Publisher implements Runnable {
 				daikinConfig.setOnlineSince(null);
 				Publish(deviceTopic + "/$stats/uptime", 0);
 				Publish(deviceTopic + "/$state", "lost");
-				Publish(nodeTopic + Constants.PR_MODE, Mode.None.toString());
-				Publish(nodeTopic + Constants.PR_POWER, false);
-				Publish(nodeTopic + Constants.PR_OUTTEMP, 0.0f);
-				Publish(nodeTopic + Constants.PR_INTEMP, 0.0f);
-				Publish(nodeTopic + Constants.PR_TARGETTEMP, 0.0f);
-				Publish(nodeTopic + Constants.PR_FAN, Fan.None.toString());
-				Publish(nodeTopic + Constants.PR_FANDIR, FanDirection.None.toString());
+				Publish(nodeTopic + TopicConstants.PR_MODE, Mode.None.toString());
+				Publish(nodeTopic + TopicConstants.PR_POWER, false);
+				Publish(nodeTopic + TopicConstants.PR_OUTTEMP, 0.0f);
+				Publish(nodeTopic + TopicConstants.PR_INTEMP, 0.0f);
+				Publish(nodeTopic + TopicConstants.PR_TARGETTEMP, 0.0f);
+				Publish(nodeTopic + TopicConstants.PR_FAN, Fan.None.toString());
+				Publish(nodeTopic + TopicConstants.PR_FANDIR, FanDirection.None.toString());
 			}
 		}
 	}

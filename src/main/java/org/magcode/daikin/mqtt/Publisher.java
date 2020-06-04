@@ -1,7 +1,5 @@
 package org.magcode.daikin.mqtt;
 
-import java.util.concurrent.Semaphore;
-
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.eclipse.paho.client.mqttv3.MqttClient;
@@ -11,7 +9,8 @@ import org.eclipse.paho.client.mqttv3.MqttPersistenceException;
 
 public abstract class Publisher {
 	protected MqttClient mqttClient;
-	protected Semaphore semaphore;
+	protected int qos = 0;
+	protected boolean retained = false;
 	private static Logger logger = LogManager.getLogger(Publisher.class);
 
 	protected void Publish(String topic, String payload) {
@@ -33,14 +32,9 @@ public abstract class Publisher {
 
 	private void Publish(String topic, MqttMessage message) {
 		try {
-			message.setRetained(true);
-			if (semaphore.availablePermits() < 10) {
-				logger.warn("Semaphore available permits: {}", semaphore.availablePermits());
-			}
-			semaphore.acquire();
+			message.setRetained(this.retained);
+			message.setQos(this.qos);
 			this.mqttClient.publish(topic, message);
-		} catch (InterruptedException e) {
-			logger.error("InterruptedException", e);
 		} catch (MqttPersistenceException e) {
 			logger.error("MqttPersistenceException", e);
 		} catch (MqttException e) {

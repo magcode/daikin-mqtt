@@ -31,8 +31,6 @@ import org.magcode.daikin.connector.DaikinConnector;
 import org.magcode.daikin.mqtt.DevicePublisher;
 import org.magcode.daikin.mqtt.NodePublisher;
 
-import java.util.concurrent.Semaphore;
-
 /**
  * @author magcode MQTT Gateway for Daikin Wifi Adapter
  *
@@ -42,16 +40,16 @@ public class DaikinMqttClient {
 	private static String mqttServer;
 	private static int refresh = 60;
 	private static String rootTopic;
+	private static boolean retained;
+	private static int qos;
 	private static MqttClient mqttClient;
 	public static final String nodeName = "aircon";
 	private static final int deviceRefresh = 600;
-	private static final int MAX_INFLIGHT = 100;
-	private static Semaphore semaphore;
+	private static final int MAX_INFLIGHT = 200;
 	private static Logger logger = LogManager.getLogger(DaikinMqttClient.class);
 	private static String logLevel = "INFO";
 
 	public static void main(String[] args) throws Exception {
-		semaphore = new Semaphore(MAX_INFLIGHT);
 		daikins = new HashMap<String, DaikinConfig>();
 		readProps();
 		reConfigureLogger();
@@ -66,12 +64,12 @@ public class DaikinMqttClient {
 
 		// start mqtt node publisher
 		ScheduledExecutorService executor = Executors.newScheduledThreadPool(1);
-		Runnable nodePublisher = new NodePublisher(daikins, rootTopic, mqttClient, semaphore);
+		Runnable nodePublisher = new NodePublisher(daikins, rootTopic, mqttClient, retained, qos);
 		ScheduledFuture<?> nodePublisherFuture = executor.scheduleAtFixedRate(nodePublisher, 10, refresh,
 				TimeUnit.SECONDS);
 
 		// start mqtt device publisher
-		Runnable devicePublisher = new DevicePublisher(daikins, rootTopic, mqttClient, deviceRefresh, semaphore);
+		Runnable devicePublisher = new DevicePublisher(daikins, rootTopic, mqttClient, deviceRefresh, retained, qos);
 		ScheduledFuture<?> devicePublisherFuture = executor.scheduleAtFixedRate(devicePublisher, 15, deviceRefresh,
 				TimeUnit.SECONDS);
 
@@ -120,6 +118,8 @@ public class DaikinMqttClient {
 			refresh = Integer.parseInt(props.getProperty("refresh", "60"));
 			mqttServer = props.getProperty("mqttServer", "tcp://localhost");
 			logLevel = props.getProperty("logLevel", "INFO");
+			retained = Boolean.valueOf(props.getProperty("retained", "false"));
+			qos = Integer.valueOf(props.getProperty("qos", "0"));
 			Enumeration<?> e = props.propertyNames();
 
 			while (e.hasMoreElements()) {
@@ -160,12 +160,17 @@ public class DaikinMqttClient {
 		mqttClient = new MqttClient(mqttServer, "client-for-daikin-on-" + hostName, new MemoryPersistence());
 		MqttConnectOptions connOpt = new MqttConnectOptions();
 		connOpt.setCleanSession(true);
-		connOpt.setKeepAliveInterval(30);
 		connOpt.setMaxInflight(MAX_INFLIGHT);
 		connOpt.setAutomaticReconnect(true);
-		mqttClient.setCallback(new Subscriber(daikins, rootTopic, semaphore));
+		mqttClient.setCallback(new Subscriber(daikins, rootTopic));
 		mqttClient.connect();
 		logger.info("Connected to MQTT broker.");
+		try {
+			// give some time before subscribing
+			Thread.sleep(200);
+		} catch (InterruptedException e) {
+			//
+		}
 		for (Entry<String, DaikinConfig> entry : daikins.entrySet()) {
 			DaikinConfig value = entry.getValue();
 			String subTopic = rootTopic + "/" + value.getName() + "/aircon/+/set";

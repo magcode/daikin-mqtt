@@ -14,6 +14,8 @@ rootTopic=home                    # the mqtt root topic
 refresh=60                        # number of seconds for MQTT status updates. Do not go below 60!
 mqttServer=tcp://192.168.0.1      # IP or hostname of your mqtt broker
 logLevel=INFO                     # logLevel
+retained=true                     # MQTT messages will be sent retained. Defaults to "false"
+qos=1										# MQTT messages will be sent with qos=1. Defaults to "0"
 
 daikin1.host=192.168.0.2          # IP adress of your first Daikin Wifi adapter
 daikin1.name=ac-room1             # a name for the Daikin device, used in the MQTT topic
@@ -116,8 +118,7 @@ home/ac-room1/aircon/mode/set
 
 Notes
 * `otemp` will go to `0` in case the device is not cooling or heating.
-* You actually don't need to use `power` to turn the AC on or off. Sending `mode=Cool` or `mode=None` does the job as well.
-* Possible values for `mode`, `fandirection` etc. can be found [here](https://bitbucket.org/m-do/jdaikin/src/default/src/main/java/net/jonathangiles/daikin/enums/) 
+* Possible values for `mode`, `fandirection` etc. can be found [here](https://github.com/magcode/daikin-mqtt/tree/master/src/main/java/org/magcode/daikin/connector/enums) 
 
 # Openhab integration example
 
@@ -129,7 +130,7 @@ Thing mqtt:topic:ac-room1 "Aircondition room 1" (mqtt:broker:mosquitto) {
         Type number : intemp "Inside temp" [ stateTopic="home/ac-room1/aircon/intemp"] 
         Type number : outtemp "Outside temp" [ stateTopic="home/ac-room1/aircon/otemp"] 
         Type number : targettemp "Target temp" [ stateTopic="home/ac-room1/aircon/targettemp"] 
-        Type switch : power "Power" [ stateTopic="home/ac-room1/aircon/power", commandTopic="home/ac-room1/aircon/power/set", on="1", off="0"]
+        Type switch : power "Power" [ stateTopic="home/ac-room1/aircon/power", commandTopic="home/ac-room1/aircon/power/set", on="On", off="Off"]
         Type switch : online "Online" [ stateTopic="home/ac-room1/$state", on="ready", off="lost"]
 }
 ```

@@ -28,4 +28,13 @@ public enum Power {
 	public static Power get(String value) {
 		return lookup.get(value);
 	}
+
+	public static Power getFromString(String power) {
+		try {
+			return Power.valueOf(power);
+		} catch (Exception e) {
+			// ignore
+		}
+		return Power.Off;
+	}
 }

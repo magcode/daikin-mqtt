@@ -4,7 +4,6 @@ import java.net.InetAddress;
 import java.net.UnknownHostException;
 import java.util.Map;
 import java.util.Map.Entry;
-import java.util.concurrent.Semaphore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -20,12 +19,13 @@ public class DevicePublisher extends Publisher implements Runnable {
 	private static Logger logger = LogManager.getLogger(DevicePublisher.class);
 
 	public DevicePublisher(Map<String, DaikinConfig> daikinHosts, String topic, MqttClient mqttClient,
-			int devicerefresh, Semaphore semaphore) {
+			int devicerefresh,boolean retained, int qos) {
 		this.daikinHosts = daikinHosts;
 		this.topic = topic;
 		this.mqttClient = mqttClient;
 		this.deviceRefresh = devicerefresh;
-		this.semaphore = semaphore;
+		this.qos = qos;
+		this.retained = retained;
 	}
 
 	@Override

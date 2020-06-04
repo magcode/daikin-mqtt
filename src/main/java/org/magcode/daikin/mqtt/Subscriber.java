@@ -1,7 +1,6 @@
 package org.magcode.daikin.mqtt;
 
 import java.util.Map;
-import java.util.concurrent.Semaphore;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.logging.log4j.LogManager;
@@ -22,12 +21,10 @@ public class Subscriber implements MqttCallback {
 	private Map<String, DaikinConfig> daikins;
 	private String rootTopic;
 	private static Logger logger = LogManager.getLogger(Subscriber.class);
-	private Semaphore semaphore;
 
-	public Subscriber(Map<String, DaikinConfig> daikins, String topic, Semaphore semaphore) {
+	public Subscriber(Map<String, DaikinConfig> daikins, String topic) {
 		this.daikins = daikins;
 		this.rootTopic = topic;
-		this.semaphore = semaphore;
 	}
 
 	@Override
@@ -89,7 +86,7 @@ public class Subscriber implements MqttCallback {
 					break;
 				case TopicConstants.PR_POWER:
 					String powerString = message.toString();
-					Power power = Power.valueOf(powerString);
+					Power power = Power.getFromString(powerString);
 					logger.info("Sending power={} to {}", power, targetDaikin.getName());
 					targetDaikin.getDaikin().updateStatus();
 					targetDaikin.getDaikin().setPower(power);
@@ -117,6 +114,6 @@ public class Subscriber implements MqttCallback {
 
 	@Override
 	public void deliveryComplete(IMqttDeliveryToken token) {
-		semaphore.release();
+
 	}
 }

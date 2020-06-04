@@ -14,8 +14,8 @@ rootTopic=home                    # the mqtt root topic
 refresh=60                        # number of seconds for MQTT status updates. Do not go below 60!
 mqttServer=tcp://192.168.0.1      # IP or hostname of your mqtt broker
 logLevel=INFO                     # logLevel
-retained=true                     # MQTT messages will be sent retained. Defaults to "false"
-qos=1										# MQTT messages will be sent with qos=1. Defaults to "0"
+retained=true                     # whether MQTT messages will be sent retained. Defaults to "false"
+qos=1                             # the qos which MQTT messages will be sent with. Defaults to "0"
 
 daikin1.host=192.168.0.2          # IP adress of your first Daikin Wifi adapter
 daikin1.name=ac-room1             # a name for the Daikin device, used in the MQTT topic

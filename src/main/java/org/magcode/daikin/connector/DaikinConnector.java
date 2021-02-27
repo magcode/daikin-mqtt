@@ -107,7 +107,11 @@ public class DaikinConnector {
 		this.daikinState.setFanDirection(fanDir);
 		this.daikinState.setMode(mode);
 		this.daikinState.setPower(power);
-		this.daikinState.setTargetTemp(parseFloat(properties.get("dt3")));
+		if (this.daikinState.getMode()==Mode.Heat) {
+			this.daikinState.setTargetTemp(parseFloat(properties.get("dt4")));
+		} else {
+			this.daikinState.setTargetTemp(parseFloat(properties.get("dt3")));
+		}		
 
 		properties = getOrSendStatus(this.sensorUrl);
 		this.daikinState.setInsideTemp(parseFloat(properties.get("htemp")));

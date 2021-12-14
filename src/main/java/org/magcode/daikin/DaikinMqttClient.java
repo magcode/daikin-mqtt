@@ -163,7 +163,7 @@ public class DaikinMqttClient {
 		connOpt.setMaxInflight(MAX_INFLIGHT);
 		connOpt.setAutomaticReconnect(true);
 		mqttClient.setCallback(new Subscriber(daikins, rootTopic));
-		mqttClient.connect();
+		mqttClient.connect(connOpt);
 		logger.info("Connected to MQTT broker.");
 		try {
 			// give some time before subscribing

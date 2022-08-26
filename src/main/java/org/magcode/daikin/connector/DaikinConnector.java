@@ -147,6 +147,7 @@ public class DaikinConnector {
 			String ret = properties.get("ret");
 			if (!"OK".equals(ret)) {
 				logger.warn("Got unexpected value for 'ret': {}. Url was '{}' and response was '{}'", ret,uri.toString(), responseBody);
+				throw new DaikinUnreachableException();
 			}
 			return properties;
 
